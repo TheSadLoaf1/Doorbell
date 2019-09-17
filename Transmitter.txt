@@ -1,0 +1,83 @@
+// Include RadioHead Amplitude Shift Keying Library
+#include <RH_ASK.h>
+// Include dependant SPI Library 
+#include <SPI.h> 
+byte ledState = B00;
+byte ledState2 = B00;
+byte ledStates = B00;
+// Create Amplitude Shift Keying Object
+RH_ASK rf_driver;
+
+byte sendState =0;
+
+int counter =0;
+int counter2 =0;
+const int buttonPin = 2;    // the number of the pushbutton pin
+const int buttonPin2 = 3;
+int buttonState;             // the current reading from the input pin
+long lastDebounceTime = 0;  // the last time the output pin was toggled
+long debounceDelay = 50;    // the debounce time; increase if the output flickers
+int buttonState2;             // the current reading from the input pin
+long lastDebounceTime2 = 0;  // the last time the output pin was toggled
+long debounceDelay2 = 50;    // the debounce time; increase if the output flickers
+char ledStatesChar[1];    //char array; stores the Led States; needed in rf_send function
+
+void setup()
+{
+    // Initialize ASK Object
+    rf_driver.init();
+    
+    pinMode(buttonPin, INPUT_PULLUP);
+    pinMode(buttonPin2, INPUT_PULLUP);
+}
+
+void loop()
+{
+   if(sendState == 1){    //data is only send if a button was pressed
+    ledStates =(ledState | ledState2);
+    itoa(ledStates, ledStatesChar, 10); 
+    digitalWrite(12, true); // Flash a light to show transmitting
+    rf_driver.send((uint8_t *)ledStatesChar, strlen(ledStatesChar));
+    rf_driver.waitPacketSent();
+    digitalWrite(12, false);
+}
+
+sendState =0; 
+  
+  //debounce code button 1:
+  int buttonValue = digitalRead(buttonPin);
+  if ((millis() - lastDebounceTime) > debounceDelay) {
+    if (buttonState != buttonValue) {
+      if(buttonValue == HIGH){
+        counter++;     
+        if ((counter%2 ==0)) {
+          ledState = B00; //00 = first LED off, 01 = first LED on
+        }
+        else {
+          ledState = B01;
+        }
+        sendState =1;
+      } 
+    lastDebounceTime = millis();
+    buttonState = buttonValue;  
+    }
+  }
+ //debounce code button 2:
+  int buttonValue2 = digitalRead(buttonPin2);  
+  if ((millis() - lastDebounceTime2) > debounceDelay2) {
+    if (buttonState2 != buttonValue2) {
+      if(buttonValue2 == HIGH){
+        counter2++;   
+      if ((counter2%2 ==0)) {
+        ledState2 = B00;    //00 = second LED off, 10 = second LED on
+      }
+      else {
+        ledState2 = B10;
+      }
+      sendState =1;
+      } 
+    lastDebounceTime2 = millis();
+    buttonState2 = buttonValue2;  
+    } 
+  }
+}  
