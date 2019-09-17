@@ -1,0 +1,56 @@
+
+// Include RadioHead Amplitude Shift Keying Library
+#include <RH_ASK.h>
+// Include dependant SPI Library 
+#include <SPI.h> 
+
+const int led1 = 2;
+const int led2 = 3;
+
+
+char ledStatesChar[2];
+byte ledStates = B00;
+byte ledState = B00;
+byte ledState2 = B00;
+
+// Create Amplitude Shift Keying Object
+RH_ASK rf_driver;
+
+void setup()
+{
+    // Initialize ASK Object
+    rf_driver.init();
+    // Setup Serial Monitor
+    pinMode(led1, OUTPUT);
+    pinMode(led2, OUTPUT);
+
+    Serial.begin(115200);
+}
+
+void loop()
+{
+    // Set buffer to size of expected message
+    uint8_t buf[1];
+    uint8_t buflen = sizeof(buf);
+    // Check if received packet is correct size
+    if (rf_driver.recv(buf, &buflen))
+    {
+      int i;
+        digitalWrite(11, true); // Flash a light to show received good message 
+  for (i = 0; i < buflen; i++)
+     {
+          ledStatesChar[i] = char(buf[i]);  //save the data
+     }
+        ledStatesChar[buflen] = '\0';
+        ledStates = atoi(ledStatesChar);
+        digitalWrite(11, false);
+    }
+      // Message received with valid checksum
+      Serial.print("Message Received: ");
+      Serial.println((char*)buf); 
+
+    ledState = ledStates & B01;
+    ledState2 = ledStates & B10;
+    digitalWrite(led1, ledState);       //turns the LED on or off
+    digitalWrite(led2, ledState2);    //turns the LED on or off
+  }
